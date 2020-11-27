@@ -17,7 +17,7 @@ export LANG=$1
 
 export HOME=/var/www
 
-celery worker -A docassemble.webapp.worker --loglevel=INFO &
+celery -A docassemble.webapp.worker worker --loglevel=INFO &
 
 CELERYPID=%1
 

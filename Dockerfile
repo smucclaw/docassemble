@@ -59,25 +59,25 @@ bash -c \
 "cd /tmp \
 && python3.6 -m venv --copies /usr/share/docassemble/local3.6 \
 && source /usr/share/docassemble/local3.6/bin/activate \
-&& pip3 install --upgrade pip==20.1 \
-&& pip3 install --upgrade mod_wsgi==4.7.0 \
+&& pip3 install --upgrade pip==20.2.4 \
+&& pip3 install --upgrade mod_wsgi==4.7.1 \
 && pip3 install --upgrade \
    3to2==1.1.1 \
-   cython==0.29.14 \
-   numpy==1.17.3 \
-   bcrypt==3.1.7 \
-   flask==1.1.1 \
-   flask-login==0.4.1 \
+   cython==0.29.21 \
+   numpy==1.19.4 \
+   bcrypt==3.2.0 \
+   flask==1.1.2 \
+   flask-login==0.5.0 \
    flask-mail==0.9.1 \
-   flask-sqlalchemy==2.4.1 \
-   flask-wtf==0.14.2 \
+   flask-sqlalchemy==2.4.4 \
+   flask-wtf==0.14.3 \
    s4cmd==2.1.0 \
-   uwsgi==2.0.18 \
-   passlib==1.7.1 \
-   pycryptodome==3.9.0 \
-   pycryptodomex==3.9.0 \
-   six==1.12.0 \
-   setuptools==40.6.2 \
+   uwsgi==2.0.19.1 \
+   passlib==1.7.4 \
+   pycryptodome==3.9.9 \
+   pycryptodomex==3.9.9 \
+   six==1.15.0 \
+   setuptools==50.3.2 \
 && pip3 install --upgrade \
    /tmp/docassemble/docassemble \
    /tmp/docassemble/docassemble_base \

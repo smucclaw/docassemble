@@ -6,7 +6,7 @@ def read(fname):
 
 setup(name='docassemble',
       version='1.1.110',
-      python_requires='>=3.5',
+      python_requires='>=3.6.12',
       description=('The namespace package for the docassemble system.'),
       long_description=read("README.md"),
       long_description_content_type='text/markdown',

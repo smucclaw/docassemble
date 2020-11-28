@@ -82,8 +82,7 @@ bash -c \
    /tmp/docassemble/docassemble \
    /tmp/docassemble/docassemble_base \
    /tmp/docassemble/docassemble_demo \
-   /tmp/docassemble/docassemble_webapp \
-&& pip3 uninstall --yes mysqlclient MySQL-python &> /dev/null"
+   /tmp/docassemble/docassemble_webapp
 
 USER root
 RUN \

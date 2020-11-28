@@ -3828,7 +3828,10 @@ def restart_others():
 def current_info(yaml=None, req=None, action=None, location=None, interface='web', session_info=None, secret=None, device_id=None, session_uid=None):
     #logmessage("interface is " + str(interface))
     if current_user.is_authenticated and not current_user.is_anonymous:
-        ext = dict(email=current_user.email, roles=[role.name for role in current_user.roles], the_user_id=current_user.id, theid=current_user.id, firstname=current_user.first_name, lastname=current_user.last_name, nickname=current_user.nickname, country=current_user.country, subdivisionfirst=current_user.subdivisionfirst, subdivisionsecond=current_user.subdivisionsecond, subdivisionthird=current_user.subdivisionthird, organization=current_user.organization, timezone=current_user.timezone, language=current_user.language)
+        role_list = [role.name for role in current_user.roles]
+        if len(role_list) == 0:
+            role_list = ['user']
+        ext = dict(email=current_user.email, roles=role_list, the_user_id=current_user.id, theid=current_user.id, firstname=current_user.first_name, lastname=current_user.last_name, nickname=current_user.nickname, country=current_user.country, subdivisionfirst=current_user.subdivisionfirst, subdivisionsecond=current_user.subdivisionsecond, subdivisionthird=current_user.subdivisionthird, organization=current_user.organization, timezone=current_user.timezone, language=current_user.language)
     else:
         ext = dict(email=None, the_user_id='t' + str(session.get('tempuser', None)), theid=session.get('tempuser', None), roles=list())
     headers = dict()

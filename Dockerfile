@@ -8,7 +8,7 @@ bash -c \
 && cp /tmp/docassemble/docassemble_webapp/docassemble.wsgi /usr/share/docassemble/webapp/ \
 && cp /tmp/docassemble/Docker/*.sh /usr/share/docassemble/webapp/ \
 && cp /tmp/docassemble/Docker/VERSION /usr/share/docassemble/webapp/ \
-&& cp /tmp/docassemble/Docker/pip.conf /usr/share/docassemble/local3.6/ \
+&& cp /tmp/docassemble/Docker/pip.conf /usr/share/docassemble/local3.8/ \
 && cp /tmp/docassemble/Docker/config/* /usr/share/docassemble/config/ \
 && cp /tmp/docassemble/Docker/cgi-bin/index.sh /usr/lib/cgi-bin/ \
 && cp /tmp/docassemble/Docker/syslog-ng.conf /usr/share/docassemble/webapp/syslog-ng.conf \
@@ -39,7 +39,7 @@ bash -c \
    /usr/share/docassemble/webapp/docassemble.wsgi \
 && chown -R www-data.www-data \
    /tmp/docassemble \
-   /usr/share/docassemble/local3.6 \
+   /usr/share/docassemble/local3.8 \
    /usr/share/docassemble/log \
    /usr/share/docassemble/files \
 && chmod ogu+r /usr/share/docassemble/config/config.yml.dist \
@@ -57,8 +57,8 @@ USER www-data
 RUN LC_CTYPE=C.UTF-8 LANG=C.UTF-8 \
 bash -c \
 "cd /tmp \
-&& python3.6 -m venv --copies /usr/share/docassemble/local3.6 \
-&& source /usr/share/docassemble/local3.6/bin/activate \
+&& python3.8 -m venv --copies /usr/share/docassemble/local3.8 \
+&& source /usr/share/docassemble/local3.8/bin/activate \
 && pip3 install --upgrade pip==20.2.4 \
 && pip3 install --upgrade mod_wsgi==4.7.1 \
 && pip3 install --upgrade \
@@ -87,7 +87,7 @@ bash -c \
 
 USER root
 RUN \
-cp /usr/share/docassemble/local3.6/lib/python3.6/site-packages/mod_wsgi/server/mod_wsgi-py36.cpython-36m-x86_64-linux-gnu.so /usr/lib/apache2/modules/mod_wsgi.so-3.6 \
+cp /usr/share/docassemble/local3.8/lib/python3.8/site-packages/mod_wsgi/server/mod_wsgi-py38.cpython-38-x86_64-linux-gnu.so /usr/lib/apache2/modules/mod_wsgi.so-3.8 \
 ; rm -rf /tmp/docassemble \
 && rm -f /etc/cron.daily/apt-compat \
 && sed -i -e 's/^\(daemonize\s*\)yes\s*$/\1no/g' -e 's/^bind 127.0.0.1/bind 0.0.0.0/g' /etc/redis/redis.conf \

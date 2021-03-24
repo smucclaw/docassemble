@@ -831,7 +831,7 @@ from flask_login import login_user, logout_user, current_user
 from docassemble_flask_user import login_required, roles_required
 from docassemble_flask_user import signals, user_logged_in, user_changed_password, user_registered, user_reset_password
 #from flask_wtf.csrf import generate_csrf
-from docassemble.webapp.develop import CreatePackageForm, CreatePlaygroundPackageForm, UpdatePackageForm, ConfigForm, PlaygroundForm, PlaygroundUploadForm, LogForm, Utilities, PlaygroundFilesForm, PlaygroundFilesEditForm, PlaygroundPackagesForm, GoogleDriveForm, OneDriveForm, GitHubForm, PullPlaygroundPackage, TrainingForm, TrainingUploadForm, APIKey, AddinUploadForm, RenameProject, DeleteProject, NewProject
+from docassemble.webapp.develop import CreatePackageForm, CreatePlaygroundPackageForm, UpdatePackageForm, ConfigForm, PlaygroundForm, PlaygroundUploadForm, LogForm, Utilities, PlaygroundFilesForm, PlaygroundFilesEditForm, PlaygroundPackagesForm, GoogleDriveForm, OneDriveForm, GitHubForm, PullPlaygroundPackage, TrainingForm, TrainingUploadForm, APIKey, AddinUploadForm, FunctionFileForm, RenameProject, DeleteProject, NewProject
 import docassemble_flask_user.signals
 import docassemble_flask_user.emails
 import docassemble_flask_user.views
@@ -5495,6 +5495,8 @@ def setup_variables():
 def apply_security_headers(response):
     if app.config['SESSION_COOKIE_SECURE']:
         response.headers['Strict-Transport-Security'] = 'max-age=31536000'
+    if 'embed' in g:
+        return response
     if daconfig.get('allow embedding', False) is not True:
         response.headers["Content-Security-Policy"] = "frame-ancestors 'self';"
     elif daconfig.get('cross site domains', []):
@@ -6182,6 +6184,8 @@ def index(action_argument=None, refer=None):
             empty_fields = list()
         authorized_fields = set()
     changed = False
+    if '_null_question' in post_data:
+        changed = True
     if '_email_attachments' in post_data and '_attachment_email_address' in post_data:
         success = False
         attachment_email_address = post_data['_attachment_email_address'].strip()
@@ -6336,7 +6340,7 @@ def index(action_argument=None, refer=None):
         the_question = None
     key_to_orig_key = dict()
     for orig_key in copy.deepcopy(post_data):
-        if orig_key in ('_checkboxes', '_empties', '_ml_info', '_back_one', '_files', '_files_inline', '_question_name', '_the_image', '_save_as', '_success', '_datatypes', '_event', '_visible', '_tracker', '_track_location', '_varnames', '_next_action', '_next_action_to_set', 'ajax', 'json', 'informed', 'csrf_token', '_action', '_order_changes', '_collect', '_collect_delete', '_list_collect_list') or orig_key.startswith('_ignore'):
+        if orig_key in ('_checkboxes', '_empties', '_ml_info', '_back_one', '_files', '_files_inline', '_question_name', '_the_image', '_save_as', '_success', '_datatypes', '_event', '_visible', '_tracker', '_track_location', '_varnames', '_next_action', '_next_action_to_set', 'ajax', 'json', 'informed', 'csrf_token', '_action', '_order_changes', '_collect', '_collect_delete', '_list_collect_list', '_null_question') or orig_key.startswith('_ignore'):
             continue
         try:
             key = myb64unquote(orig_key)
@@ -6373,7 +6377,7 @@ def index(action_argument=None, refer=None):
     imported_core = False
     special_question = None
     for orig_key in post_data:
-        if orig_key in ('_checkboxes', '_empties', '_ml_info', '_back_one', '_files', '_files_inline', '_question_name', '_the_image', '_save_as', '_success', '_datatypes', '_event', '_visible', '_tracker', '_track_location', '_varnames', '_next_action', '_next_action_to_set', 'ajax', 'json', 'informed', 'csrf_token', '_action', '_order_changes', '', '_collect', '_collect_delete', '_list_collect_list') or orig_key.startswith('_ignore'):
+        if orig_key in ('_checkboxes', '_empties', '_ml_info', '_back_one', '_files', '_files_inline', '_question_name', '_the_image', '_save_as', '_success', '_datatypes', '_event', '_visible', '_tracker', '_track_location', '_varnames', '_next_action', '_next_action_to_set', 'ajax', 'json', 'informed', 'csrf_token', '_action', '_order_changes', '', '_collect', '_collect_delete', '_list_collect_list', '_null_question') or orig_key.startswith('_ignore'):
             continue
         data = post_data[orig_key]
         try:
@@ -6850,8 +6854,8 @@ def index(action_argument=None, refer=None):
             orderChanges = json.loads(post_data['_order_changes'])
             for tableName, changes in orderChanges.items():
                 tableName = myb64unquote(tableName)
-                if STRICT_MODE and tableName not in authorized_fields:
-                    raise DAError("The variable " + repr(tableName) + " was not in the allowed fields, which were " + repr(authorized_fields))
+                #if STRICT_MODE and tableName not in authorized_fields:
+                #    raise DAError("The variable " + repr(tableName) + " was not in the allowed fields, which were " + repr(authorized_fields))
                 if illegal_variable_name(tableName):
                     error_messages.append(("error", "Error: Invalid character in table reorder: " + str(tableName)))
                     continue
@@ -7626,7 +7630,7 @@ def index(action_argument=None, refer=None):
       var daQuestionID = """ + json.dumps(question_id_dict) + """;
       var daCsrf = """ + json.dumps(generate_csrf()) + """;
       var daShowIfInProcess = false;
-      var daFieldsToSkip = ['_checkboxes', '_empties', '_ml_info', '_back_one', '_files', '_files_inline', '_question_name', '_the_image', '_save_as', '_success', '_datatypes', '_event', '_visible', '_tracker', '_track_location', '_varnames', '_next_action', '_next_action_to_set', 'ajax', 'json', 'informed', 'csrf_token', '_action', '_order_changes', '_collect', '_list_collect_list'];
+      var daFieldsToSkip = ['_checkboxes', '_empties', '_ml_info', '_back_one', '_files', '_files_inline', '_question_name', '_the_image', '_save_as', '_success', '_datatypes', '_event', '_visible', '_tracker', '_track_location', '_varnames', '_next_action', '_next_action_to_set', 'ajax', 'json', 'informed', 'csrf_token', '_action', '_order_changes', '_collect', '_list_collect_list', '_null_question'];
       var daVarLookup = Object();
       var daVarLookupRev = Object();
       var daVarLookupMulti = Object();
@@ -8761,6 +8765,12 @@ def index(action_argument=None, refer=None):
           var theHtml = xhr.responseText;
           theHtml = theHtml.replace(/<script[^>]*>[^<]*<\/script>/g, '');
           $(daTargetDiv).html(theHtml);
+          if (daJsEmbed){
+            $(daTargetDiv)[0].scrollTo(0, 1);
+          }
+          else{
+            window.scrollTo(0, 1);
+          }
         }
         else {
           console.log("daProcessAjaxError: response was not text");
@@ -9797,7 +9807,7 @@ def index(action_argument=None, refer=None):
             return false;
           });
         });
-        $("#daemailform").validate({'submitHandler': daValidationHandler, 'rules': {'_attachment_email_address': {'minlength': 1, 'required': true, 'email': true}}, 'messages': {'_attachment_email_address': {'required': """ + json.dumps(word("An e-mail address is required.")) + """, 'email': """ + json.dumps(word("You need to enter a complete e-mail address.")) + """}}, 'errorClass': 'da-has-error'});
+        $("#daemailform").validate({'submitHandler': daValidationHandler, 'rules': {'_attachment_email_address': {'minlength': 1, 'required': true, 'email': true}}, 'messages': {'_attachment_email_address': {'required': """ + json.dumps(word("An e-mail address is required.")) + """, 'email': """ + json.dumps(word("You need to enter a complete e-mail address.")) + """}}, 'errorClass': 'da-has-error text-danger'});
         $("a[data-embaction]").click(daEmbeddedAction);
         $("a[data-js]").click(daEmbeddedJs);
         $("a.da-review-action").click(daReviewAction);
@@ -10528,7 +10538,7 @@ def index(action_argument=None, refer=None):
             $(element).removeClass('is-invalid');
         },
         errorElement: 'span',
-        errorClass: 'da-has-error',
+        errorClass: 'da-has-error text-danger',
         errorPlacement: function(error, element) {
             $(error).addClass('text-danger');
             var elementName = $(element).attr("name");
@@ -10732,7 +10742,7 @@ def index(action_argument=None, refer=None):
         interview_language = interview_status.question.language
     else:
         interview_language = current_language
-    validation_rules = {'rules': {}, 'messages': {}, 'errorClass': 'da-has-error', 'debug': False}
+    validation_rules = {'rules': {}, 'messages': {}, 'errorClass': 'da-has-error text-danger', 'debug': False}
     interview_status.exit_url = title_info.get('exit url', None)
     interview_status.exit_link = title_info.get('exit link', 'exit')
     interview_status.exit_label = title_info.get('exit label', word('Exit'))
@@ -11187,7 +11197,11 @@ def get_history(interview, interview_status):
     seeking_len = len(interview_status.seeking)
     if seeking_len:
         starttime = interview_status.seeking[0]['time']
+        seen_done = False
         for stage in interview_status.seeking:
+            if seen_done:
+                output = ''
+                seen_done = False
             index += 1
             if index < seeking_len and 'reason' in interview_status.seeking[index] and interview_status.seeking[index]['reason'] in ('asking', 'running') and interview_status.seeking[index]['question'] is stage['question'] and 'question' in stage and 'reason' in stage and stage['reason'] == 'considering':
                 continue
@@ -11223,6 +11237,7 @@ def get_history(interview, interview_status):
                 output += "          <h5>Needed definition of <code>" + str(stage['variable']) + "</code>" + the_time + "</h5>\n"
             elif 'done' in stage:
                 output += "          <h5>Completed processing" + the_time + "</h5>\n"
+                seen_done = True
     return output
 
 def is_mobile_or_tablet():
@@ -11845,7 +11860,7 @@ def observer():
       var daDisable = null;
       var daCsrf = """ + json.dumps(generate_csrf()) + """;
       var daShowIfInProcess = false;
-      var daFieldsToSkip = ['_checkboxes', '_empties', '_ml_info', '_back_one', '_files', '_files_inline', '_question_name', '_the_image', '_save_as', '_success', '_datatypes', '_event', '_visible', '_tracker', '_track_location', '_varnames', '_next_action', '_next_action_to_set', 'ajax', 'json', 'informed', 'csrf_token', '_action', '_order_changes', '_collect'];
+      var daFieldsToSkip = ['_checkboxes', '_empties', '_ml_info', '_back_one', '_files', '_files_inline', '_question_name', '_the_image', '_save_as', '_success', '_datatypes', '_event', '_visible', '_tracker', '_track_location', '_varnames', '_next_action', '_next_action_to_set', 'ajax', 'json', 'informed', 'csrf_token', '_action', '_order_changes', '_collect', '_null_question'];
       var daVarLookup = Object();
       var daVarLookupRev = Object();
       var daVarLookupMulti = Object();
@@ -12158,6 +12173,12 @@ def observer():
           var theHtml = xhr.responseText;
           theHtml = theHtml.replace(/<script[^>]*>[^<]*<\/script>/g, '');
           $(daTargetDiv).html(theHtml);
+          if (daJsEmbed){
+            $(daTargetDiv)[0].scrollTo(0, 1);
+          }
+          else{
+            window.scrollTo(0, 1);
+          }
         }
         else {
           console.log("daProcessAjaxError: response was not text");
@@ -16671,16 +16692,21 @@ def playground_download(current_project, userid, filename):
     return ('File not found', 404)
 
 @app.route('/officefunctionfile', methods=['GET', 'POST'])
+@cross_origin(origins='*', methods=['GET', 'POST', 'HEAD'], automatic_options=True)
 def playground_office_functionfile():
+    g.embed = True
     docassemble.base.functions.set_language(DEFAULT_LANGUAGE)
     if not app.config['ENABLE_PLAYGROUND']:
         return ('File not found', 404)
-    response = make_response(render_template('pages/officefunctionfile.html', current_project=get_current_project(), page_title=word("Docassemble Playground"), tab_title=word("Playground"), parent_origin=daconfig.get('office addin url', daconfig.get('url root', get_base_url()))), 200)
+    functionform = FunctionFileForm(request.form)
+    response = make_response(render_template('pages/officefunctionfile.html', current_project=get_current_project(), page_title=word("Docassemble Playground"), tab_title=word("Playground"), parent_origin=daconfig.get('office addin url', daconfig.get('url root', get_base_url())), form=functionform), 200)
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
     return response
 
 @app.route('/officetaskpane', methods=['GET', 'POST'])
+@cross_origin(origins='*', methods=['GET', 'POST', 'HEAD'], automatic_options=True)
 def playground_office_taskpane():
+    g.embed = True
     docassemble.base.functions.set_language(DEFAULT_LANGUAGE)
     if not app.config['ENABLE_PLAYGROUND']:
         return ('File not found', 404)
@@ -16690,9 +16716,11 @@ def playground_office_taskpane():
     return response
 
 @app.route('/officeaddin', methods=['GET', 'POST'])
+@cross_origin(origins='*', methods=['GET', 'POST', 'HEAD'], automatic_options=True)
 @login_required
 @roles_required(['developer', 'admin'])
 def playground_office_addin():
+    g.embed = True
     setup_translation()
     if not app.config['ENABLE_PLAYGROUND']:
         return ('File not found', 404)
@@ -25037,6 +25065,147 @@ def api_config():
             fp.write(yaml_data)
         restart_all()
         return ('', 204)
+
+@app.route('/api/playground_install', methods=['GET', 'POST', 'DELETE'])
+@csrf.exempt
+@cross_origin(origins='*', methods=['POST', 'HEAD'], automatic_options=True)
+def api_playground_install():
+    if not api_verify(request, roles=['admin', 'developer']):
+        return jsonify_with_status("Access denied.", 403)
+    post_data = request.get_json(silent=True)
+    if post_data is None:
+        post_data = request.form.copy()
+    do_restart = true_or_false(post_data.get('restart', True))
+    current_project = post_data.get('project', 'default')
+    try:
+        if current_user.has_role('admin'):
+            user_id = int(post_data.get('user_id', current_user.id))
+        else:
+            if 'user_id' in post_data:
+                assert int(post_data['user_id']) == current_user.id
+            user_id = current_user.id
+    except:
+        return jsonify_with_status("Invalid user_id.", 400)
+    if current_project != 'default' and current_project not in get_list_of_projects(user_id):
+        return jsonify_with_status("Invalid project.", 400)
+    docassemble.base.functions.this_thread.current_info['user'] = dict(is_anonymous=False, theid=user_id)
+    found = False
+    expected_name = 'unknown'
+    need_to_restart = False
+    area = dict()
+    area_sec = dict(templates='playgroundtemplate', static='playgroundstatic', sources='playgroundsources', questions='playground')
+    for sec in ('playground', 'playgroundpackages', 'playgroundtemplate', 'playgroundstatic', 'playgroundsources', 'playgroundmodules'):
+        area[sec] = SavedFile(user_id, fix=True, section=sec)
+    try:
+        for filekey in request.files:
+            the_files = request.files.getlist(filekey)
+            if not the_files:
+                continue
+            for up_file in the_files:
+                found = True
+                zippath = tempfile.NamedTemporaryFile(mode="wb", prefix='datemp', suffix=".zip", delete=False)
+                up_file.save(zippath)
+                up_file.close()
+                zippath.close()
+                with zipfile.ZipFile(zippath.name, mode='r') as zf:
+                    readme_text = ''
+                    setup_py = ''
+                    extracted = dict()
+                    data_files = dict(templates=list(), static=list(), sources=list(), interviews=list(), modules=list(), questions=list())
+                    has_docassemble_dir = set()
+                    has_setup_file = set()
+                    for zinfo in zf.infolist():
+                        if zinfo.is_dir():
+                            if zinfo.filename.endswith('/docassemble/'):
+                                has_docassemble_dir.add(re.sub(r'/docassemble/$', '', zinfo.filename))
+                            if zinfo.filename == 'docassemble/':
+                                has_docassemble_dir.add('')
+                        elif zinfo.filename.endswith('/setup.py'):
+                            (directory, filename) = os.path.split(zinfo.filename)
+                            has_setup_file.add(directory)
+                        elif zinfo.filename == 'setup.py':
+                            has_setup_file.add('')
+                    root_dir = None
+                    for directory in has_docassemble_dir.union(has_setup_file):
+                        if root_dir is None or len(directory) < len(root_dir):
+                            root_dir = directory
+                    if root_dir is None:
+                        return jsonify_with_status("Not a docassemble package.", 400)
+                    for zinfo in zf.infolist():
+                        if zinfo.filename.endswith('/'):
+                            continue
+                        (directory, filename) = os.path.split(zinfo.filename)
+                        if filename.startswith('#') or filename.endswith('~'):
+                            continue
+                        dirparts = splitall(directory)
+                        if '.git' in dirparts:
+                            continue
+                        levels = re.findall(r'/', directory)
+                        time_tuple = zinfo.date_time
+                        the_time = time.mktime(datetime.datetime(*time_tuple).timetuple())
+                        for sec in ('templates', 'static', 'sources', 'questions'):
+                            if directory.endswith('data/' + sec) and filename != 'README.md':
+                                data_files[sec].append(filename)
+                                target_filename = os.path.join(directory_for(area[area_sec[sec]], current_project), filename)
+                                with zf.open(zinfo) as source_fp, open(target_filename, 'wb') as target_fp:
+                                    shutil.copyfileobj(source_fp, target_fp)
+                                os.utime(target_filename, (the_time, the_time))
+                        if filename == 'README.md' and directory == root_dir:
+                            with zf.open(zinfo) as f:
+                                the_file_obj = TextIOWrapper(f, encoding='utf8')
+                                readme_text = the_file_obj.read()
+                        if filename == 'setup.py' and directory == root_dir:
+                            with zf.open(zinfo) as f:
+                                the_file_obj = TextIOWrapper(f, encoding='utf8')
+                                setup_py = the_file_obj.read()
+                        elif len(levels) >= 2 and filename.endswith('.py') and filename != '__init__.py' and 'tests' not in dirparts:
+                            need_to_restart = True
+                            data_files['modules'].append(filename)
+                            target_filename = os.path.join(directory_for(area['playgroundmodules'], current_project), filename)
+                            with zf.open(zinfo) as source_fp, open(target_filename, 'wb') as target_fp:
+                                shutil.copyfileobj(source_fp, target_fp)
+                                os.utime(target_filename, (the_time, the_time))
+                    setup_py = re.sub(r'.*setup\(', '', setup_py, flags=re.DOTALL)
+                    for line in setup_py.splitlines():
+                        m = re.search(r"^ *([a-z_]+) *= *\(?'(.*)'", line)
+                        if m:
+                            extracted[m.group(1)] = m.group(2)
+                        m = re.search(r'^ *([a-z_]+) *= *\(?"(.*)"', line)
+                        if m:
+                            extracted[m.group(1)] = m.group(2)
+                        m = re.search(r'^ *([a-z_]+) *= *\[(.*)\]', line)
+                        if m:
+                            the_list = list()
+                            for item in re.split(r', *', m.group(2)):
+                                inner_item = re.sub(r"'$", '', item)
+                                inner_item = re.sub(r"^'", '', inner_item)
+                                inner_item = re.sub(r'"+$', '', inner_item)
+                                inner_item = re.sub(r'^"+', '', inner_item)
+                                the_list.append(inner_item)
+                            extracted[m.group(1)] = the_list
+                    info_dict = dict(readme=readme_text, interview_files=data_files['questions'], sources_files=data_files['sources'], static_files=data_files['static'], module_files=data_files['modules'], template_files=data_files['templates'], dependencies=[z for z in map(lambda y: re.sub(r'[\>\<\=].*', '', y), extracted.get('install_requires', list()))], description=extracted.get('description', ''), author_name=extracted.get('author', ''), author_email=extracted.get('author_email', ''), license=extracted.get('license', ''), url=extracted.get('url', ''), version=extracted.get('version', ''))
+
+                    info_dict['dependencies'] = [x for x in [z for z in map(lambda y: re.sub(r'[\>\<\=].*', '', y), info_dict['dependencies'])] if x not in ('docassemble', 'docassemble.base', 'docassemble.webapp')]
+                    package_name = re.sub(r'^docassemble\.', '', extracted.get('name', expected_name))
+                    with open(os.path.join(directory_for(area['playgroundpackages'], current_project), 'docassemble.' + package_name), 'w', encoding='utf-8') as fp:
+                        the_yaml = yaml.safe_dump(info_dict, default_flow_style=False, default_style='|')
+                        fp.write(str(the_yaml))
+                    for key in r.keys('da:interviewsource:docassemble.playground' + str(current_user.id) + project_name(current_project) + ':*'):
+                        r.incr(key.decode())
+                    for sec in area:
+                        area[sec].finalize()
+                    the_file = package_name
+                zippath.close()
+    except Exception as err:
+        logmessage("api_playground_install: " + err.__class__.__name__ + ": " + str(err))
+        return jsonify_with_status("Error installing packages.", 400)
+    if not found:
+        return jsonify_with_status("No package found.", 400)
+    for key in r.keys('da:interviewsource:docassemble.playground' + str(user_id) + project_name(current_project) + ':*'):
+        r.incr(key.decode())
+    if do_restart and need_to_restart:
+        restart_all()
+    return ('', 204)
 
 @app.route('/api/playground', methods=['GET', 'POST', 'DELETE'])
 @csrf.exempt

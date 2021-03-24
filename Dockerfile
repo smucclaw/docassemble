@@ -54,6 +54,20 @@ USER www-data
 RUN LC_CTYPE=C.UTF-8 LANG=C.UTF-8 \
 bash -c \
 "cd /tmp \
+&& git clone https://github.com/ciao-lang/ciao \
+&& cd ciao; ./ciao-boot.sh local-install "
+
+USER www-data
+ENV PATH="/tmp/ciao/build/bin:${PATH}"
+RUN LC_CTYPE=C.UTF-8 LANG=C.UTF-8 \
+bash -c \
+"ciao get gitlab.software.imdea.org/ciao-lang/sCASP"
+
+
+USER www-data
+RUN LC_CTYPE=C.UTF-8 LANG=C.UTF-8 \
+bash -c \
+"cd /tmp \
 && python3.8 -m venv --copies /usr/share/docassemble/local3.8 \
 && source /usr/share/docassemble/local3.8/bin/activate \
 && pip3 install --upgrade pip==21.0.1 \
@@ -83,8 +97,10 @@ bash -c \
    /tmp/docassemble/docassemble \
    /tmp/docassemble/docassemble_base \
    /tmp/docassemble/docassemble_demo \
-   /tmp/docassemble/docassemble_webapp"
+   /tmp/docassemble/docassemble_webapp "
 
+
+ 
 USER root
 RUN \
 cp /usr/share/docassemble/local3.8/lib/python3.8/site-packages/mod_wsgi/server/mod_wsgi-py38.cpython-38-x86_64-linux-gnu.so /usr/lib/apache2/modules/mod_wsgi.so-3.8 \

@@ -13,7 +13,7 @@
    
 ## Running the docker instance
     ``` sh
-   docker run -d -p 80:80 -p 443:443 --stop-timeout 600 l4-da 
+    docker run -d -p 80:80 -p 443:443 --stop-timeout 600 l4-da 
     ```
 - When it succeeds, you should see a hash at the bottom of STDOUT like this
 - Open your web browser of choice, and connect to localhost
